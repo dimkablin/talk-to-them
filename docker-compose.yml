@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ocr
+      - nlp
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+
+  ocr:
+    build: ./ocr
+    ports:
+      - "5001:5001"
+
+  nlp:
+    build: ./nlp
+    ports:
+      - "5002:5002"
