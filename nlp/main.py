@@ -1,81 +1,42 @@
-import logging
-import math
-import os
-from time import time
+import fire
+from llama_cpp import Llama
 
-from gpt4all import GPT4All
-from env import DEVICE
+SYSTEM_PROMPT = "Ты — Джастин, виртуальный ассистент и просто очень хороший собеседник."
 
 
-class LLM:
-    def __init__(self, model_name, model_path="models/"):
-        self.model_name = model_name
-        self.model_path = model_path
-        self.device = DEVICE
-
-        # try to load model
-        try:
-            self.model = self.load_model()
-        except Exception as e:
-            logging.exception(f"Ошибка инициализации модели: {self.model_name} в папке {self.model_path}")
-            print(e.with_traceback())
-    
-    def load_model(self):
-        # Здесь загрузка модели с использованием gpt4all
-        try:
-            model = GPT4All(
-                model_name=self.model_name,
-                model_path=self.model_path,
-                allow_download=True,
-                device=self.device,
-                n_threads=6
-            )
-            return model
-        except Exception as e:
-            print(f"Error loading model from {self.model_name}: {e}")
-            return None
-    
-    def stop_on_token_callback(self, token_id, token_string):
-        # one sentence is enough:
-        if '---' in token_string:
-            return False
-        else:
-            return True
-
-    def __call__(self, prompt):
-        if self.model is None:
-            print("Model is not loaded.")
-            return None
-
-        try:
-            response = self.model.generate(
-                prompt,
-                max_tokens=128,
-                n_batch=1,
-                temp=0.01,
-                callback=self.stop_on_token_callback
-            )
-            return response
-        except Exception as e:
-            print(f"Error generating response: {e}")
-            return None
+def interact(
+    model_path,
+    n_ctx=8192,
+    top_k=30,
+    top_p=0.9,
+    temperature=0.6,
+    repeat_penalty=1.1
+):
+    model = Llama(
+        model_path=model_path,
+        n_ctx=n_ctx,
+        n_parts=1,
+        verbose=False,
+        n_threads=7
+    )
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    while True:
+        user_message = input("User: ")
+        print("Assistant: ", end="")
+        messages.append({"role": "user", "content": user_message})
+        for part in model.create_chat_completion(
+            messages,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            repeat_penalty=repeat_penalty,
+            stream=True,
+        ):
+            delta = part["choices"][0]["delta"]
+            if "content" in delta:
+                print(delta["content"], end="", flush=True)
+        print()
 
 
 if __name__ == "__main__":
-    logging.info("Started gpt4all.")
-    start_time = time()
-
-    llm = LLM("saiga-q2_K.gguf")
-
-    logging.info(f"Loaded model: {llm.model_name} within {time() - start_time} seconds.")
-    
-    with llm.model.chat_session("Тебя зовут Лина. Ты добрый и отзывчивый ассистент."):
-        while True:
-            prompt = str(input("User: "))
-            start_time = time()
-        
-            if prompt == "exit":
-                break
-
-            response = llm(prompt)
-            print(f"Bot [{(time()-start_time):.2f} sec]: {response}")
+    fire.Fire(interact)
