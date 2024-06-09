@@ -37,8 +37,9 @@ project-root/
 - [x] Define the project's structure
 
 #### NLP module
-- [ ] Add loading .gguf models from HF
-- [ ] Define a class LLM with the ```__call__()``` function for predictions.
+- [x] Add loading .gguf models from HF
+- [x] Define a class LLM with the ```__call__()``` function for predictions.
+- [ ] Add stream of generation support in cmd
 
 
 #### OCR module

@@ -1,6 +1,6 @@
 import gradio as gr
 from main import LLM
-from env import llm_port
+from nlp.env import llm_port
 
 # Инициализация модели
 model_name = "saiga-q2_K.gguf"  # Укажите имя модели
